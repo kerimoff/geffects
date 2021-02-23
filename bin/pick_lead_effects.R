@@ -58,8 +58,10 @@ count_occurrence = function(data){
 }
 
 effects = count_occurrence(effects)
-min_pvalue = apply(dplyr::select(effects, dplyr::ends_with(".pvalue")), 1, min, na.rm=T) 
-effects = dplyr::mutate(effects, min_pvalue = min_pvalue)
+df_pvalues <- dplyr::select(effects, dplyr::ends_with(".pvalue"))
+  
+effects = dplyr::mutate(effects, min_pvalue = apply(df_pvalues, 1, min, na.rm=T)) %>% 
+  dplyr::mutate(min_pvalue_qtl_group = sub(".pvalue","",names(df_pvalues)[apply(df_pvalues, MARGIN = 1, FUN = which.min)]))
 
 effects = dplyr::left_join(effects, ccs, by="eqtl_id")
 
@@ -70,9 +72,18 @@ lead_effects = effects %>%
   dplyr::sample_n(1) %>% 
   dplyr::ungroup()
 
+lead_effects_random = effects %>%
+  dplyr::group_by(cc_id) %>%
+  dplyr::filter(qtl_group_count == max(qtl_group_count)) %>%
+  # dplyr::filter(min_pvalue == min(min_pvalue, na.rm=T)) %>%
+  dplyr::sample_n(1) %>%
+  dplyr::ungroup()
+
+
 nrow(lead_effects)
 
 readr::write_tsv(lead_effects, file.path(output_folder, "lead_effects_na.tsv"))
+readr::write_tsv(lead_effects_random, file.path(output_folder, "lead_effects_random.tsv"))
 
 lead_pairs = dplyr::distinct(lead_effects, variant, molecular_trait_id, position, chromosome)
 readr::write_tsv(dplyr::select(lead_pairs, molecular_trait_id, variant, chromosome, position), 
