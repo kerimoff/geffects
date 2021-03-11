@@ -59,9 +59,12 @@ count_occurrence = function(data){
 
 effects = count_occurrence(effects)
 df_pvalues <- dplyr::select(effects, dplyr::ends_with(".pvalue"))
-  
 effects = dplyr::mutate(effects, min_pvalue = apply(df_pvalues, 1, min, na.rm=T)) %>% 
   dplyr::mutate(min_pvalue_qtl_group = sub(".pvalue","",names(df_pvalues)[apply(df_pvalues, MARGIN = 1, FUN = which.min)]))
+
+df_betas <- dplyr::select(effects, dplyr::ends_with(".beta"))
+effects = dplyr::mutate(effects, max_beta = apply(df_betas, 1,FUN = function(x) abs(max(x, na.rm = T)))) %>% 
+  dplyr::mutate(max_beta_qtl_group = sub(".beta","",names(df_betas)[apply(df_betas, MARGIN = 1, FUN = which.max)]))
 
 effects = dplyr::left_join(effects, ccs, by="eqtl_id")
 
@@ -80,10 +83,30 @@ lead_effects_random = effects %>%
   dplyr::ungroup()
 
 
+# lead_effects_max_beta = effects %>%
+#   dplyr::group_by(cc_id) %>%
+#   dplyr::filter(qtl_group_count == max(qtl_group_count)) %>%
+#   dplyr::filter(max_beta == max(max_beta, na.rm=T)) %>%
+#   dplyr::sample_n(1) %>%
+#   dplyr::ungroup()
+
+lead_effects_max_beta = effects %>%
+  dplyr::group_by(cc_id) %>%
+  dplyr::filter(qtl_group_count == max(qtl_group_count)) %>%
+  dplyr::arrange(desc(max_beta)) %>%
+  dplyr::slice(1) %>%
+  dplyr::ungroup()
+
+
+message("length of effects: ", nrow(effects))
+message("length of unique cc_ids in effects: ", length(unique(effects$cc_id)))
+message("length of lead_effects_max_beta: ", nrow(lead_effects_max_beta))
+
 nrow(lead_effects)
 
 readr::write_tsv(lead_effects, file.path(output_folder, "lead_effects_na.tsv"))
 readr::write_tsv(lead_effects_random, file.path(output_folder, "lead_effects_random.tsv"))
+readr::write_tsv(lead_effects_max_beta, file.path(output_folder, "lead_effects_max_beta.tsv"))
 
 lead_pairs = dplyr::distinct(lead_effects, variant, molecular_trait_id, position, chromosome)
 readr::write_tsv(dplyr::select(lead_pairs, molecular_trait_id, variant, chromosome, position), 

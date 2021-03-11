@@ -13,28 +13,33 @@ Channel.fromPath(params.susie_files)
     .map{row -> row[0]}
     .set { build_cc } 
 
-susie_files = Channel.fromPath(params.susie_files)
 
-Channel.fromFilePairs("${params.sumstat_path}/*_ge.nominal.sorted.tsv.gz{,.tbi}")
+Channel.fromPath(params.cc_file)
+    .ifEmpty { error "Cannot find any connected components file in: ${params.cc_file}" }
+    .set { query_samstat } 
+
+// susie_files = Channel.fromPath(params.susie_files)
+
+Channel.fromFilePairs("${params.sumstat_path}/*_tx.nominal.sorted.tsv.gz{,.tbi}")
     .set{sumstat}
 
-process buildComponents {
-    publishDir "${params.outdir}", mode: "copy"
+// process buildComponents {
+//     publishDir "${params.outdir}", mode: "copy"
 
-    input:
-    path y from build_cc.collect()
-    path susie from susie_files
+//     input:
+//     path y from build_cc.collect()
+//     path susie from susie_files
 
-    output:
-    path "cc.tsv" into query_samstat
+//     output:
+//     path "cc.tsv" into query_samstat
     
-    """
-    Rscript $baseDir/bin/build_connected_components.R -m ${susie} 
-    """
-}
+//     """
+//     Rscript $baseDir/bin/build_connected_components.R -m ${susie} 
+//     """
+// }
 
 process querySumstat {
-    memory '10 G'
+    memory '32 G'
 
     input:
     tuple val(qtl_group), path(sumstat), path(components) from sumstat.combine(query_samstat)
@@ -51,7 +56,7 @@ process querySumstat {
 }
 
 process mergeSumstat {
-    memory '40 G'   
+    memory '64 G'   
     publishDir "${params.outdir}", mode: "copy"
 
     input:
@@ -74,7 +79,9 @@ process findLeadEffects {
     path eqtls from lead_effects
 
     output:
-    path "lead_effects_random.tsv" into qtlgroup_similarity
+    path "lead_effects_max_beta.tsv" into qtlgroup_similarity
+    file 'lead_effects_random.tsv' 
+    file 'lead_effects_na.tsv' 
 
     script:
     """
