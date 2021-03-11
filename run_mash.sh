@@ -1,2 +1,2 @@
-nextflow run main.nf -profile tartu_hpc -resume\
- --cc_file data/transcript_cc_id.tsv
+nextflow run main.nf -profile tartu_hpc \
+ --cc_file data/exon_cc_id.tsv

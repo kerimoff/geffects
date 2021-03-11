@@ -39,9 +39,9 @@ coords_file <- args$coords
 
 print(qtl_group)
 
-if(!dir.exists(output_dir)){
-  dir.create(output_dir, recursive = T)
-}
+# if(!dir.exists(output_dir)){
+#   dir.create(output_dir, recursive = T)
+# }
 
 temp_sumstat_file = file.path(output_dir, paste0(qtl_group, "_temp.tsv"))
 

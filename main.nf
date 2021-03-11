@@ -20,7 +20,7 @@ Channel.fromPath(params.cc_file)
 
 // susie_files = Channel.fromPath(params.susie_files)
 
-Channel.fromFilePairs("${params.sumstat_path}/*_tx.nominal.sorted.tsv.gz{,.tbi}")
+Channel.fromFilePairs("${params.sumstat_path}/*_exon.nominal.sorted.tsv.gz{,.tbi}")
     .set{sumstat}
 
 // process buildComponents {
